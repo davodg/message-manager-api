@@ -1,0 +1,57 @@
+version: "3.8"
+services:
+  message-manager-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: message-manager-api
+    ports:
+      - 5001:5001
+    volumes:
+      - ./:/app
+    environment:
+      APP_NAME: message-manager-api
+      API_ENV: dev
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      POSTGRES_URL: postgresql://postgres:postgres@postgres:5431/message_manager_api?sslmode=disable
+    networks:
+      - app_network
+
+  postgres:
+    image: postgres:9.6
+    container_name: postgresql-message-manager
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=message_manager_api
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - TZ=GMT
+    ports:
+      - 5431:5432
+    volumes:
+      - ./docker-compose/postgres:/var/lib/postgresql-message-manager/data
+    networks:
+      - app_network
+
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:latest
+    environment:
+      - SERVICES=sqs,sns,lambda,cloudformation,logs,iam
+      - AWS_DEFAULT_REGION=us-east-1
+      - EDGE_PORT=4566
+      - TMPDIR=/tmp/localstack
+    ports:
+      - '4566-4597:4566-4597'
+    links:
+      - message-manager-api
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge

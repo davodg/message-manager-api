@@ -1,0 +1,4 @@
+gunicorn==21.2.0
+psycopg2cffi==2.9.0
+alembic==1.13.1
+python-dotenv==1.0.1
